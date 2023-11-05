@@ -15,29 +15,29 @@
     b) В адрес вставляем URL: https://zont-online.ru/api/get_authtoken
     c) Во вкладке "Headers" выбираем "Text editor"
     d) Вставляем набор Header'ов:
-          ```
-          content-type: application/json
-          authorization: Basic XXXXXXXX
-          x-zont-client: your@email
-          ```
-       где вместо XXXXXXXX закодированное значение логина и пароля из пункта №1.
+```
+content-type: application/json
+authorization: Basic XXXXXXXX
+x-zont-client: your@email
+```
+где вместо XXXXXXXX закодированное значение логина и пароля из пункта №1.
    
    e) Жмем кнопку отправки запроса. Если все верно, внизу будет код ответ "200", а в теле ответа нас интересует значение "token". Сохраняем его в надежном месте.
 Скриншот:
 ![Screenshot_2](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/5c288f11-e75d-47cb-b172-35ee50e75228)
 
 
-3) ## Через утилиту "Advanced REST Client" получаем содержимое параметров и команд вашего устройства.
+4) ## Через утилиту "Advanced REST Client" получаем содержимое параметров и команд вашего устройства.
     a) Выбираем метод "POST"
     b) В адрес вставляем URL: https://zont-online.ru/api/devices
     c) Во вкладке "Headers" выбираем "Text editor"
-    d) Вставляем набор Header'ов:
-          ```
-          content-type: application/json
-          x-zont-client: realto.dem@gmail.com
-          x-zont-token: YYYYYYYY
-          ```
-       где вместо YYYYYYYY закодированное значение токена из пункта №2.
+    d) Вставляем набор Header'ов:   
+```
+content-type: application/json
+x-zont-client: realto.dem@gmail.com
+x-zont-token: YYYYYYYY
+```
+где вместо YYYYYYYY закодированное значение токена из пункта №2.
    e) Во вкладке "Body" заполняем значение: {"load_io":true}
    f) Жмем кнопку отправки запроса. Если все верно, внизу будет код ответ "200", а в ответе будет большой JSON с параметрами вашего устройства, с которым далее и будем работать.
    Рекомендую его вставить в какой-нибудь обработчик JSON (можно веб версии, можно через notepad++), так удобнее работать.
@@ -45,7 +45,7 @@
 ![Screenshot_3](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/2bd2d646-f8aa-48f0-bfb0-facdf171b539)
 ![Screenshot_4](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/8743658e-1ce7-41a8-91c3-e745e70f4262)
 
-4) ## Получаем device_id и пути до нужных атрибутов
+6) ## Получаем device_id и пути до нужных атрибутов
 Далее все сильно зависит от модели вашего устройства и ваших потребностей, как выяснилось, у разных устройств разные структуры ответов и команд. Например, то что описано в статье на sprut.ai не подошло для моего устройства и я обращался в тех. поддержку ZONT, которая мне предоставила команды для моего устройства. А офф. документация к API была устаревшая.
 По этому, если мои команды не работаю, пробуйте из статьи на sprut.ai, а если и они не работают, то пишите в поддержку ZONT.
 Итак, теперь вам из ответа в пункте №3 необходимо получать id компонентов, которие вы ходите читать или управлять, а точнее не просто id, а JSON-путь до атрибутов.
