@@ -1,39 +1,93 @@
-# ***Первая версия, чуть позже дополню ключевой информацией из приведенных ниже гайдов.***
-
 # Управление устройствами ZONT для котлов
 
-# Основано на:
-# 1) https://sprut.ai/client/article/2292
-# 2) https://pastebin.com/BeSwx1F0
-# 3) Информации от технической поддержки ZONT и точно актуально для Zont H2000+, Zont Connect+. Причина обращения в том, что частично официальная документация описывающая API не актуальна.
+Для интерграции с Home Assistant нужно выполнить следующие действия:
 
-## a) Запрос для смены целевой температуры выглядит так:
-```
-https://zont-online.ru/api/send_z3k_command
-{
-  "device_id": ...,  // идентификатор прибора
-  "object_id": ...,  // идентификатор контура
-  "command_name": "TargetTemperature",
-  "command_args": {"value": 56}, // желаемая целевая
-  "is_guaranteed": false/true
-}
-```
+1) ## Через любой сервис закодировать выши логин и пароль к ZONT в Base64.
+Напримере сервиса https://base64encode.net
+    a) Выбираем "Base64 Encode"
+    b) В первое поле вводим ваше логин и пароль в формате "login:passoword" (без ковычек)
+    c) Жмем "Encode" и получаем закодированное значение во втором поле. Сохраняем его в надежном месте.
+Скриншот:
+![Screenshot_1](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/bff5563c-dbd7-4e5c-baf9-10211246ac92)
+
+2) ## Через утилиту "Advanced REST Client" получаем токет аутентификации к API ZONT.
+    a) Выбираем метод "POST"
+    b) В адрес вставляем URL: https://zont-online.ru/api/get_authtoken
+    c) Во вкладке "Headers" выбираем "Text editor"
+    d) Вставляем набор Header'ов:
+          ```
+          content-type: application/json
+          authorization: Basic XXXXXXXX
+          x-zont-client: your@email
+          ```
+       где вместо XXXXXXXX закодированное значение логина и пароля из пункта №1.
+   
+   e) Жмем кнопку отправки запроса. Если все верно, внизу будет код ответ "200", а в теле ответа нас интересует значение "token". Сохраняем его в надежном месте.
+Скриншот:
+![Screenshot_2](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/5c288f11-e75d-47cb-b172-35ee50e75228)
+
+
+3) ## Через утилиту "Advanced REST Client" получаем содержимое параметров и команд вашего устройства.
+    a) Выбираем метод "POST"
+    b) В адрес вставляем URL: https://zont-online.ru/api/devices
+    c) Во вкладке "Headers" выбираем "Text editor"
+    d) Вставляем набор Header'ов:
+          ```
+          content-type: application/json
+          x-zont-client: realto.dem@gmail.com
+          x-zont-token: YYYYYYYY
+          ```
+       где вместо YYYYYYYY закодированное значение токена из пункта №2.
+   e) Во вкладке "Body" заполняем значение: {"load_io":true}
+   f) Жмем кнопку отправки запроса. Если все верно, внизу будет код ответ "200", а в ответе будет большой JSON с параметрами вашего устройства, с которым далее и будем работать.
+   Рекомендую его вставить в какой-нибудь обработчик JSON (можно веб версии, можно через notepad++), так удобнее работать.
+Скриншоты:
+![Screenshot_3](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/2bd2d646-f8aa-48f0-bfb0-facdf171b539)
+![Screenshot_4](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/8743658e-1ce7-41a8-91c3-e745e70f4262)
+
+4) ## Получаем device_id и пути до нужных атрибутов
+Далее все сильно зависит от модели вашего устройства и ваших потребностей, как выяснилось, у разных устройств разные структуры ответов и команд. Например, то что описано в статье на sprut.ai не подошло для моего устройства и я обращался в тех. поддержку ZONT, которая мне предоставила команды для моего устройства. А офф. документация к API была устаревшая.
+По этому, если мои команды не работаю, пробуйте из статьи на sprut.ai, а если и они не работают, то пишите в поддержку ZONT.
+Итак, теперь вам из ответа в пункте №3 необходимо получать id компонентов, которие вы ходите читать или управлять, а точнее не просто id, а JSON-путь до атрибутов.
+Основное, что тут требуется это значение для device_id. А разные значения - температура, статусы и т.д. ищутся ниже по дереву.
+Например, у меня путь до атрибута с температурой выглядит так: "$.devices[0].io.z3k-state.4099"
+
+Скриншоты:
+![Screenshot_5](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/d5d698a1-3bb7-4f54-87a7-a5e381cf7ed0)
+![Screenshot_6](https://github.com/upais/ZONT-to-Home_Assistant/assets/86227709/e3b6cce0-38a0-4d15-a9d2-2afcc7892536)
+
+
+    a) Запрос для смены целевой температуры выглядит так:
+        ```
+        https://zont-online.ru/api/send_z3k_command
+        {
+          "device_id": ...,  // идентификатор прибора
+          "object_id": ...,  // идентификатор контура
+          "command_name": "TargetTemperature",
+          "command_args": {"value": 56}, // желаемая целевая
+          "is_guaranteed": false/true
+        }
+        ```
 Идентификатор прибора (device_id) можно увидеть в настройках. Идентификатор отопительного контура (object_id): нужно отправить запрос на https://zont-online.ru/api/devices, найти нужный контур в ответе на этот вопрос в массиве **devices[].z3k_config.heating_circuits**, и у нужного контура взять значение поля id.
 
 **is_guaranteed** — признак гарантированной доставки команды. Если команду не удастся доставить сразу же, сервер запомнит её и будет пытаться доставить снова при выходе прибора на связь, пока прибор не подтвердит получение. Если **false**, сервер сделает однократную попытку доставить команду.
 
-## b) Запрос для смены режима:
-```
-https://zont-online.ru/api/send_z3k_command
-{
-  "device_id": ..., // идентификатор прибора
-  "object_id": ..., // идентификатор режима
-  "command_name": "SelectHeatingMode",
-  "command_args": null,
-  "is_guaranteed": false/true
-}
-```
+    b) Запрос для смены режима:
+        ```
+        https://zont-online.ru/api/send_z3k_command
+        {
+          "device_id": ..., // идентификатор прибора
+          "object_id": ..., // идентификатор режима
+          "command_name": "SelectHeatingMode",
+          "command_args": null,
+          "is_guaranteed": false/true
+        }
+        ```
 Идентификатор режима можно найти также в ответе на запрос devices в  **devices[].z3k_config.heating_modes [].id.**
+
+5) ## Формируете нужные вам запросы в сенсоры для Home Assistant.
+Все зависит от ваших желаний и потребностей, ниже два варианта сделанных через Packages. Плюс приложу мой конфиг, который работает уже пару лет. По примерам, думаю, каждый сможет разобраться.
+
 
 # Конфигурация №1: Получает только используемые атрибуты. Более правильный метод
 
@@ -243,3 +297,7 @@ climate_heating:
         Content-Type: application/json
       payload: '{"device_id": 123456, "object_id": 33333, "command_name": "TargetTemperature", "command_args": {"value": {{ (states.input_number.target_heating_temperature.state) | round(1) }}}, "is_guaranteed": true}'
       ```
+
+# Основано на:
+# 1) https://sprut.ai/client/article/2292
+# 2) Информации от технической поддержки ZONT и точно актуально для Zont H2000+, Zont Connect+. Причина обращения в том, что частично официальная документация описывающая API не актуальна.
