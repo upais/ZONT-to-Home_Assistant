@@ -16,13 +16,14 @@
 ### 2) Через утилиту "Advanced REST Client" получаем токет аутентификации к API ZONT.
 [Ссылка](https://github.com/advanced-rest-client/arc-electron/releases)
 +    Выбираем метод "POST"
-+    В адрес вставляем URL: https://zont-online.ru/api/get_authtoken
++    В адрес вставляем URL: https://lk.zont-online.ru/api/get_authtoken
 +    Во вкладке "Headers" выбираем "Text editor"
 +    Вставляем набор Header'ов:
 ````
 content-type: application/json
 authorization: Basic XXXXXXXX
 x-zont-client: your@email
+client_name: "Home Assistant"
 ````
 где вместо ***XXXXXXXX*** закодированное значение логина и пароля из пункта №1.
    
@@ -35,7 +36,7 @@ x-zont-client: your@email
 
 ### 3) Через утилиту "Advanced REST Client" получаем содержимое параметров и команд вашего устройства.
 +    Выбираем метод "POST"
-+    В адрес вставляем URL: https://zont-online.ru/api/devices
++    В адрес вставляем URL: https://lk.zont-online.ru/api/devices
 +    Во вкладке "Headers" выбираем "Text editor"
 +    Вставляем набор Header'ов:   
 ````
@@ -61,6 +62,7 @@ x-zont-token: YYYYYYYY
 Итак, теперь вам из ответа в пункте №3 необходимо получать id компонентов, которие вы ходите читать или управлять, а точнее не просто id, а JSON-путь до атрибутов.
 Основное, что тут требуется это значение для device_id. А разные значения - температура, статусы и т.д. ищутся ниже по дереву.
 Идентификатор прибора (device_id) можно увидеть в настройках. Идентификатор отопительного контура (object_id): нужно отправить запрос на https://zont-online.ru/api/devices, найти нужный контур в ответе в массиве **devices[].z3k_config.heating_circuits**, и у нужного контура взять значение поля id.
+Для удобства лучше использовать утилиты работы с JSON, [например](https://jsoneditoronline.org)
 
 <details>
 <summary>Скриншоты</summary>
